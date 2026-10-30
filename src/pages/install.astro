@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import InstallSteps from '../components/InstallSteps.astro';
+import Faq from '../components/Faq.astro';
+import { site } from '../lib/site';
+export const prerender = true;
+
+const trouble = [
+  { q: 'The QR code does not scan', a: 'Make sure you are on Wi-Fi, increase screen brightness, or use manual entry with the SM-DP+ address and activation code from your order page.' },
+  { q: '"This code is no longer valid"', a: `A QR code can usually be installed only once. If you deleted the eSIM or the install was interrupted, contact ${site.supportEmail} with your order number.` },
+  { q: 'Installed, but no internet at my destination', a: 'Select the travel eSIM for mobile data, turn on Data Roaming for that line, and restart the phone. If needed, set the APN shown in your eSIM email.' },
+  { q: 'Can I install it before my trip?', a: 'Yes, and we recommend it. The plan only starts when the eSIM connects to a network at your destination.' },
+];
+---
+
+<Base title="How to install your eSIM" description="Step-by-step guide to install a travel eSIM on iPhone and Android, plus fixes for common problems.">
+  <div class="container-page py-10">
+    <h1 class="text-3xl font-extrabold sm:text-4xl">How to install your eSIM</h1>
+    <p class="mt-3 max-w-2xl text-muted">It takes about two minutes. You need Wi-Fi and the QR code from your order page or email.</p>
+    <div class="mt-8">
+      <InstallSteps />
+    </div>
+    <div class="mt-12">
+      <Faq title="Troubleshooting" items={trouble} />
+    </div>
+  </div>
+</Base>

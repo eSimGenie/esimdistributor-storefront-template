@@ -1,0 +1,28 @@
+{
+  "$schema": "./site.config.schema.json",
+  "brandName": "Your Brand",
+  "tagline": "Travel eSIMs for 190+ destinations. Instant delivery, no roaming bills.",
+  "logoUrl": null,
+  "primaryColor": "#0B5FFF",
+  "accentColor": "#FF7A00",
+  "supportEmail": "support@example.com",
+  "websiteUrl": "https://shop.example.com",
+  "defaultCurrency": "USD",
+  "pricing": {
+    "mode": "multiplier",
+    "multiplier": 2.0,
+    "fixedMarkup": 0,
+    "roundTo": 0.99,
+    "overrides": {}
+  },
+  "featuredDestinations": ["FR", "ES", "IT", "GB", "US", "JP", "TH", "europe"],
+  "hiddenSkus": [],
+  "legal": {
+    "companyName": "Your Company Ltd",
+    "address": "1 Example Street, Dublin, Ireland",
+    "registration": null,
+    "jurisdiction": "Ireland"
+  },
+  "analytics": null,
+  "apiBaseUrl": "https://api.esimdistributor.com"
+}

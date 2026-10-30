@@ -1,0 +1,61 @@
+---
+import Base from '../../layouts/Base.astro';
+import { site } from '../../lib/site';
+export const prerender = true;
+// TEMPLATE TEXT — have it reviewed for your business and jurisdiction before launch.
+const updated = '2026-01-01';
+const L = site.legal;
+const analyticsName = site.analytics
+  ? { plausible: 'Plausible Analytics (cookieless)', ga4: 'Google Analytics 4', cloudflare: 'Cloudflare Web Analytics (cookieless)' }[site.analytics.provider]
+  : null;
+---
+
+<Base title="Privacy policy" description={`How ${site.brandName} handles your personal data.`}>
+  <article class="container-page prose-page py-10">
+    <h1 class="text-3xl font-extrabold">Privacy policy</h1>
+    <p class="text-sm text-muted">Last updated {updated}</p>
+
+    <p>{L.companyName}, {L.address} ("we") is the controller of the personal data described here. Questions: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.</p>
+
+    <h2>What we collect</h2>
+    <ul>
+      <li><strong>Order data:</strong> your email address, the plan you bought, the amount paid and order references.</li>
+      <li><strong>Payment data:</strong> handled by Stripe. We never see or store your full card number.</li>
+      <li><strong>eSIM data:</strong> the eSIM identifiers (ICCID, activation code) and usage needed to provide the service.</li>
+      <li><strong>Technical data:</strong> IP address and request logs, kept briefly for security and abuse prevention.</li>
+    </ul>
+
+    <h2>Why we use it</h2>
+    <ul>
+      <li>To deliver your eSIM and provide support (performance of a contract).</li>
+      <li>To prevent fraud and keep the site secure (legitimate interests).</li>
+      <li>To keep accounting records (legal obligation).</li>
+    </ul>
+    <p>We do not sell your data and we do not send marketing emails unless you ask for them.</p>
+
+    <h2>Who we share it with</h2>
+    <ul>
+      <li>Stripe — payment processing.</li>
+      <li>Our eSIM supply partner — to issue your eSIM and, where applicable, email it to you.</li>
+      <li>Cloudflare — hosting and order storage.</li>
+      <li>Our email delivery provider — to send order emails.</li>
+      {analyticsName && <li>{analyticsName} — aggregated website statistics.</li>}
+    </ul>
+    <p>Some of these providers process data outside your country under appropriate safeguards such as standard contractual clauses.</p>
+
+    <h2>How long we keep it</h2>
+    <p>Order records are kept for as long as required for accounting and tax purposes (typically 6–7 years). Technical logs are kept for a short period.</p>
+
+    <h2>Your rights</h2>
+    <p>
+      You can ask for access to, correction or deletion of your personal data, object to processing, or ask for a copy of it, by emailing
+      <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>. You can also complain to your data protection authority.
+    </p>
+
+    <h2>Cookies</h2>
+    <p>
+      We use no advertising cookies. Your light/dark preference is stored in your browser's local storage.
+      {site.analytics?.provider === 'ga4' ? ' Google Analytics sets cookies to measure visits.' : ''}
+    </p>
+  </article>
+</Base>

@@ -1,0 +1,79 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../lib/site';
+import { readableTextOn } from '../lib/format';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Path for the canonical URL; defaults to the current path. */
+  path?: string;
+  noindex?: boolean;
+  /** Private pages (order links carry a token) load no third-party scripts. */
+  analytics?: boolean;
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description = site.tagline, path = Astro.url.pathname, noindex = false, analytics = true, jsonLd } = Astro.props;
+const fullTitle = title === site.brandName ? title : `${title} | ${site.brandName}`;
+const canonical = `${site.websiteUrl}${path === '/' ? '' : path}`;
+const ogImage = site.logoUrl ? new URL(site.logoUrl, site.websiteUrl).toString() : undefined;
+const brandCss = `:root{--brand:${site.primaryColor};--brand-fg:${readableTextOn(site.primaryColor)};--accent:${site.accentColor}}`;
+const a = analytics ? site.analytics : null;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content={site.primaryColor} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.brandName} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content="summary" />
+    <style set:html={brandCss}></style>
+    <script is:inline>
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('theme'); } catch (e) {}
+        var dark = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      })();
+    </script>
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
+    {a?.provider === 'plausible' && <script is:inline defer data-domain={a.id} src="https://plausible.io/js/script.js"></script>}
+    {a?.provider === 'cloudflare' && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: a.id })}></script>
+    )}
+    {a?.provider === 'ga4' && (
+      <Fragment>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${a.id}`}></script>
+        <script is:inline define:vars={{ gaId: a.id }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { dataLayer.push(arguments); }
+          gtag('js', new Date());
+          gtag('config', gaId, { anonymize_ip: true });
+        </script>
+      </Fragment>
+    )}
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2">Skip to content</a>
+    <Header />
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

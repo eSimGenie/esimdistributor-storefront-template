@@ -1,0 +1,115 @@
+---
+import Base from '../../layouts/Base.astro';
+import PlanCard from '../../components/PlanCard.astro';
+import { site } from '../../lib/site';
+import { getServices } from '../../lib/runtime';
+import { findDestination, getPlansForDestination } from '../../lib/catalog';
+import { countryName, flagEmoji } from '../../lib/format';
+import { formatUsd } from '../../lib/pricing';
+import { PUBLIC_PAGE_CACHE } from '../../lib/http';
+
+const services = getServices(Astro.locals);
+const code = Astro.params.code ?? '';
+if (!/^[A-Za-z0-9_-]{1,64}$/.test(code)) return new Response(null, { status: 404 });
+
+const dest = await findDestination(services.catalog, code);
+if (!dest) {
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
+}
+const plans = await getPlansForDestination(services.catalog, dest);
+const fixed = plans.filter((p) => p.dataType === 'fixed');
+const daily = plans.filter((p) => p.dataType === 'daily');
+const minPrice = plans.length ? Math.min(...plans.map((p) => p.priceCents)) : null;
+const countries = [...new Set(plans.flatMap((p) => p.coverage.countries))].sort();
+const flag = flagEmoji(dest.type, dest.code);
+
+Astro.response.headers.set('Cache-Control', PUBLIC_PAGE_CACHE);
+
+const title = `${dest.name} eSIM`;
+const description = `Prepaid ${dest.name} eSIM data plans${minPrice !== null ? ` from ${formatUsd(minPrice)}` : ''}. Instant QR delivery, no roaming fees, keep your WhatsApp number.`;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: `${dest.name} travel eSIM`,
+  brand: { '@type': 'Brand', name: site.brandName },
+  description,
+  ...(minPrice !== null
+    ? {
+        offers: {
+          '@type': 'AggregateOffer',
+          priceCurrency: 'USD',
+          lowPrice: (minPrice / 100).toFixed(2),
+          highPrice: (Math.max(...plans.map((p) => p.priceCents)) / 100).toFixed(2),
+          offerCount: plans.length,
+          availability: 'https://schema.org/InStock',
+        },
+      }
+    : {}),
+};
+---
+
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <section class="bg-brand-soft">
+    <div class="container-page py-10">
+      <nav aria-label="Breadcrumb" class="text-sm text-muted">
+        <a href="/" class="hover:text-fg">Home</a> / <a href="/destinations" class="hover:text-fg">Destinations</a> /
+        <span aria-current="page">{dest.name}</span>
+      </nav>
+      <div class="mt-4 flex items-center gap-4">
+        <span class="text-5xl leading-none" aria-hidden="true">{flag}</span>
+        <div>
+          <h1 class="text-3xl font-extrabold sm:text-4xl">{dest.name} eSIM</h1>
+          {minPrice !== null && <p class="mt-1 text-muted">{plans.length} plans · from <strong class="text-fg">{formatUsd(minPrice)}</strong></p>}
+        </div>
+      </div>
+      {dest.type !== 'country' && countries.length > 0 && (
+        <details class="mt-4 max-w-3xl text-sm">
+          <summary class="cursor-pointer font-semibold">Covers {countries.length} countries</summary>
+          <p class="mt-2 text-muted">{countries.map((c) => countryName(c)).join(', ')}</p>
+        </details>
+      )}
+    </div>
+  </section>
+
+  <div class="container-page py-10">
+    {plans.length === 0 && <p class="card p-6 text-muted">No plans are available for {dest.name} right now. Please check back soon.</p>}
+
+    {fixed.length > 0 && (
+      <section aria-labelledby="fixed-title">
+        <h2 id="fixed-title" class="text-2xl font-bold">Data plans</h2>
+        <p class="mt-1 text-muted">One data allowance for the whole trip.</p>
+        <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {fixed.map((p) => <PlanCard plan={p} />)}
+        </ul>
+      </section>
+    )}
+
+    {daily.length > 0 && (
+      <section aria-labelledby="daily-title" class="mt-12">
+        <h2 id="daily-title" class="text-2xl font-bold">Daily plans</h2>
+        <p class="mt-1 text-muted">A fresh high-speed allowance every day; speed is reduced once the day's data is used.</p>
+        <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {daily.map((p) => <PlanCard plan={p} />)}
+        </ul>
+      </section>
+    )}
+
+    <section class="mt-12 grid gap-4 md:grid-cols-3" aria-label="Before you buy">
+      <div class="card p-5">
+        <h2 class="font-bold">Check your phone</h2>
+        <p class="mt-2 text-sm text-muted">Your phone must support eSIM and be carrier-unlocked.</p>
+        <a href="/compatibility" class="mt-3 inline-block text-sm font-semibold text-brand dark:text-fg">Compatible devices →</a>
+      </div>
+      <div class="card p-5">
+        <h2 class="font-bold">Install before you go</h2>
+        <p class="mt-2 text-sm text-muted">Scan the QR code at home; the plan starts when you connect in {dest.name}.</p>
+        <a href="/install" class="mt-3 inline-block text-sm font-semibold text-brand dark:text-fg">Install guide →</a>
+      </div>
+      <div class="card p-5">
+        <h2 class="font-bold">Data only</h2>
+        <p class="mt-2 text-sm text-muted">Calls and texts stay on your normal SIM. WhatsApp and FaceTime work over data.</p>
+      </div>
+    </section>
+  </div>
+</Base>

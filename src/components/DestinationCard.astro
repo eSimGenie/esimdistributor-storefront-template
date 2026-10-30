@@ -1,0 +1,29 @@
+---
+import type { PublicDestination } from '../lib/catalog';
+import { destinationPath, flagEmoji } from '../lib/format';
+import { formatUsd } from '../lib/pricing';
+
+interface Props {
+  dest: PublicDestination;
+}
+const { dest } = Astro.props;
+---
+
+<a
+  href={destinationPath(dest.code)}
+  class="card group flex items-center gap-3 p-4 no-underline transition hover:border-brand hover:shadow-sm"
+  data-dest
+  data-name={`${dest.name} ${dest.code}`.toLowerCase()}
+>
+  <span class="text-3xl leading-none" aria-hidden="true">{flagEmoji(dest.type, dest.code)}</span>
+  <span class="min-w-0 flex-1">
+    <span class="block truncate font-semibold group-hover:text-brand">{dest.name}</span>
+    <span class="block text-sm text-muted">
+      {dest.type === 'country' ? 'Country' : dest.type === 'global' ? 'Global' : 'Region'} · {dest.planCount} plans
+    </span>
+  </span>
+  <span class="text-right text-sm">
+    <span class="block text-muted">from</span>
+    <span class="block font-bold">{formatUsd(dest.fromCents)}</span>
+  </span>
+</a>

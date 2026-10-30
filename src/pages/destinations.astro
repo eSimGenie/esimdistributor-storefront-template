@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import DestinationCard from '../components/DestinationCard.astro';
+import SearchFilter from '../components/SearchFilter.astro';
+import { site } from '../lib/site';
+import { getServices } from '../lib/runtime';
+import { getDestinations, type PublicDestination } from '../lib/catalog';
+import { PUBLIC_PAGE_CACHE } from '../lib/http';
+
+const services = getServices(Astro.locals);
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 60);
+let all: PublicDestination[] = [];
+let failed = false;
+try {
+  all = await getDestinations(services.catalog);
+  Astro.response.headers.set('Cache-Control', PUBLIC_PAGE_CACHE);
+} catch (e) {
+  console.error('[destinations] catalog unavailable', e);
+  failed = true;
+}
+const needle = q.toLowerCase();
+const matches = (d: PublicDestination) => !needle || `${d.name} ${d.code}`.toLowerCase().includes(needle);
+const groups = [
+  { id: 'countries', title: 'Countries', items: all.filter((d) => d.type === 'country') },
+  { id: 'regions', title: 'Regional & global plans', items: all.filter((d) => d.type !== 'country') },
+].filter((g) => g.items.length > 0);
+const shownCount = all.filter(matches).length;
+---
+
+<Base
+  title="eSIM destinations"
+  description={`Travel eSIM data plans for ${all.length || 'all'} countries and regions from ${site.brandName}. Instant delivery.`}
+  path="/destinations"
+>
+  <div class="container-page py-10">
+    <h1 class="text-3xl font-extrabold sm:text-4xl">All destinations</h1>
+    <p class="mt-2 text-muted">Pick a country, or a regional plan if you are visiting several countries.</p>
+    <div class="mt-6 max-w-xl">
+      <SearchFilter target="#all-destinations" value={q} />
+    </div>
+
+    {failed ? (
+      <p class="card mt-8 p-6 text-muted">Our plans are temporarily unavailable. Please try again in a few minutes.</p>
+    ) : (
+      <div id="all-destinations" class="mt-8 space-y-10">
+        {groups.map((g) => (
+          <section aria-labelledby={`g-${g.id}`}>
+            <h2 id={`g-${g.id}`} class="text-xl font-bold">{g.title}</h2>
+            <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {g.items.map((d) => (
+                <li hidden={!matches(d)}>
+                  <DestinationCard dest={d} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <p data-filter-empty hidden={shownCount !== 0} class="mt-6 text-muted">
+        No destination matches "{q}". Try a country name, or a regional plan such as Europe.
+      </p>
+    )}
+  </div>
+</Base>

@@ -1,0 +1,122 @@
+---
+import Base from '../../layouts/Base.astro';
+import { site } from '../../lib/site';
+import { getServices } from '../../lib/runtime';
+import { getPlan } from '../../lib/catalog';
+import { countryName, dataLabel, daysLabel, destinationPath, flagEmoji } from '../../lib/format';
+import { formatUsd } from '../../lib/pricing';
+import { PUBLIC_PAGE_CACHE } from '../../lib/http';
+
+const services = getServices(Astro.locals);
+const sku = Astro.params.sku ?? '';
+if (!/^[A-Za-z0-9_-]{1,64}$/.test(sku)) return new Response(null, { status: 404 });
+
+const plan = await getPlan(services.catalog, sku);
+if (!plan) {
+  Astro.response.status = 404;
+  return Astro.rewrite('/404');
+}
+Astro.response.headers.set('Cache-Control', PUBLIC_PAGE_CACHE);
+
+const error = Astro.url.searchParams.get('error');
+const facts: [string, string][] = [
+  ['Data', dataLabel(plan)],
+  ['Validity', daysLabel(plan.durationDays)],
+  ['Coverage', plan.coverage.countries.length > 1 ? `${plan.coverage.name} (${plan.coverage.countries.length} countries)` : plan.coverage.name],
+  ['Network speed', plan.speed ?? '4G/LTE where available'],
+  ['Top-ups', plan.topUpSupported ? 'Available' : 'Not available — buy a new plan if you need more'],
+  ['Phone number', 'Data only (no phone number)'],
+];
+const description = `${plan.name}: ${dataLabel(plan)} for ${daysLabel(plan.durationDays)} for ${formatUsd(plan.priceCents)}. Instant eSIM delivery.`;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: plan.name,
+  sku: plan.sku,
+  brand: { '@type': 'Brand', name: site.brandName },
+  description,
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'USD',
+    price: (plan.priceCents / 100).toFixed(2),
+    availability: 'https://schema.org/InStock',
+    url: `${site.websiteUrl}/plan/${encodeURIComponent(plan.sku)}`,
+  },
+};
+---
+
+<Base title={plan.name} description={description} jsonLd={jsonLd}>
+  <div class="container-page py-10">
+    <nav aria-label="Breadcrumb" class="text-sm text-muted">
+      <a href="/destinations" class="hover:text-fg">Destinations</a> /
+      <a href={destinationPath(plan.coverage.code)} class="hover:text-fg">{plan.coverage.name}</a> /
+      <span aria-current="page">{dataLabel(plan)}, {daysLabel(plan.durationDays)}</span>
+    </nav>
+
+    <div class="mt-6 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div>
+        <h1 class="flex items-center gap-3 text-3xl font-extrabold sm:text-4xl">
+          <span aria-hidden="true">{flagEmoji(plan.coverage.type, plan.coverage.code)}</span>
+          {plan.name}
+        </h1>
+        <dl class="card mt-6 divide-y divide-line">
+          {facts.map(([k, v]) => (
+            <div class="flex flex-wrap justify-between gap-2 px-5 py-3">
+              <dt class="text-muted">{k}</dt>
+              <dd class="font-medium">{v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {plan.networks && plan.networks.length > 0 && (
+          <section class="mt-8" aria-labelledby="networks-title">
+            <h2 id="networks-title" class="text-xl font-bold">Networks</h2>
+            <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+              {plan.networks.map((n) => (
+                <li class="card flex items-center gap-3 px-4 py-3 text-sm">
+                  <span aria-hidden="true">{flagEmoji('country', n.country)}</span>
+                  <span><strong>{countryName(n.country)}</strong>: {n.operators.join(', ')}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section class="mt-8 prose-page" aria-labelledby="how-title">
+          <h2 id="how-title">How it works</h2>
+          <ol>
+            <li>Pay securely with Stripe.</li>
+            <li>Your QR code appears on screen and is emailed to you.</li>
+            <li>Install the eSIM before you travel (<a href="/install">install guide</a>).</li>
+            <li>The {daysLabel(plan.durationDays)} start when the eSIM connects at your destination.</li>
+          </ol>
+        </section>
+      </div>
+
+      <aside class="lg:sticky lg:top-24 lg:self-start">
+        <form method="post" action="/api/checkout" class="card space-y-4 p-6">
+          <p class="text-4xl font-extrabold">{formatUsd(plan.priceCents)}</p>
+          <p class="text-sm text-muted">One-time payment · USD · no subscription</p>
+          {error && (
+            <p role="alert" class="rounded-lg border border-red-400 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950 dark:text-red-100">
+              {error === 'unavailable' ? 'This plan is no longer available.' : 'Checkout could not be started. Please try again.'}
+            </p>
+          )}
+          <input type="hidden" name="sku" value={plan.sku} />
+          <div>
+            <label for="email" class="text-sm font-medium">Email for your eSIM <span class="text-muted">(optional, you can enter it at checkout)</span></label>
+            <input id="email" name="email" type="email" autocomplete="email" class="input mt-1" placeholder="you@example.com" />
+          </div>
+          <label class="flex items-start gap-2 text-sm">
+            <input type="checkbox" required class="mt-1 size-4 accent-[var(--brand)]" />
+            <span>My phone supports eSIM and is unlocked (<a href="/compatibility" class="underline" target="_blank">check</a>).</span>
+          </label>
+          <button type="submit" class="btn btn-primary w-full text-lg">Buy now</button>
+          <p class="text-center text-xs text-muted">
+            By buying you agree to our <a href="/legal/terms" class="underline">terms</a>.
+          </p>
+        </form>
+      </aside>
+    </div>
+  </div>
+</Base>

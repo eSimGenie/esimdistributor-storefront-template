@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/eSimGenie/esimdistributor-storefront-template/site.config.schema.json",
+  "title": "eSIM storefront site config",
+  "description": "Non-secret settings for the storefront. Validated at build and start-up (src/lib/config-schema.ts is the source of truth).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["brandName", "supportEmail", "websiteUrl", "legal"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "brandName": { "type": "string", "minLength": 1, "maxLength": 60, "description": "Shown in the header, titles and emails." },
+    "tagline": { "type": "string", "maxLength": 140, "description": "Home page hero sub-heading." },
+    "logoUrl": {
+      "type": ["string", "null"],
+      "description": "Absolute https URL or a /path to a file in public/. null shows the brand name as text."
+    },
+    "primaryColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "default": "#0B5FFF" },
+    "accentColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "default": "#FF7A00" },
+    "supportEmail": { "type": "string", "format": "email" },
+    "websiteUrl": { "type": "string", "format": "uri", "description": "Public URL of the storefront, e.g. https://shop.acme.example (no trailing slash)." },
+    "defaultCurrency": { "type": "string", "enum": ["USD"], "default": "USD" },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["multiplier", "fixed"],
+          "default": "multiplier",
+          "description": "multiplier: wholesale × multiplier. fixed: wholesale + fixedMarkup."
+        },
+        "multiplier": { "type": "number", "minimum": 1, "maximum": 20, "default": 2.0 },
+        "fixedMarkup": { "type": "number", "minimum": 0, "maximum": 1000, "default": 0, "description": "USD added to wholesale in fixed mode." },
+        "roundTo": {
+          "enum": [0.99, 0.49, null],
+          "default": 0.99,
+          "description": "0.99: round up to the next X.99. 0.49: round up to the next X.49 or X.99. null: no charm rounding."
+        },
+        "overrides": {
+          "type": "object",
+          "description": "Exact selling price (USD) per SKU. Never below wholesale: lower values are raised to wholesale and logged.",
+          "additionalProperties": { "type": "number", "exclusiveMinimum": 0, "maximum": 10000, "multipleOf": 0.01 }
+        }
+      }
+    },
+    "featuredDestinations": {
+      "type": "array",
+      "maxItems": 24,
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+      "description": "Destination codes for the home page, e.g. FR, JP, europe."
+    },
+    "hiddenSkus": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" } },
+    "legal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["companyName", "address"],
+      "properties": {
+        "companyName": { "type": "string", "minLength": 1 },
+        "address": { "type": "string", "minLength": 1 },
+        "registration": { "type": ["string", "null"], "description": "Company / VAT number line, optional." },
+        "jurisdiction": { "type": "string", "minLength": 2, "default": "Ireland" }
+      }
+    },
+    "analytics": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "id"],
+          "properties": {
+            "provider": { "type": "string", "enum": ["plausible", "ga4", "cloudflare"] },
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "description": "Plausible: your domain. GA4: G-XXXXXXX. Cloudflare Web Analytics: the beacon token."
+            }
+          }
+        }
+      ]
+    },
+    "apiBaseUrl": { "type": "string", "format": "uri", "default": "https://api.esimdistributor.com" }
+  }
+}

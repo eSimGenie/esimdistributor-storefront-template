@@ -1,0 +1,19 @@
+# build output
+dist/
+.astro/
+.wrangler/
+
+# dependencies
+node_modules/
+
+# secrets — never commit these
+.dev.vars
+.env
+.env.*
+!.env.example
+
+# logs / OS
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db

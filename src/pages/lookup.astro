@@ -1,0 +1,78 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../lib/site';
+import { getServices } from '../lib/runtime';
+import { sendOrderEmail } from '../lib/services';
+import { clientIp, EMAIL_RE } from '../lib/http';
+
+/**
+ * Find an order by email + order number. The answer is always the same generic message
+ * so the form cannot be used to discover which emails or orders exist; the link (or the
+ * eSIM email) is only ever sent to the address on the order.
+ */
+const services = getServices(Astro.locals);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+let submitted = false;
+let error: string | null = null;
+let email = '';
+let number = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData().catch(() => null);
+  email = String(form?.get('email') ?? '').trim().slice(0, 254);
+  number = String(form?.get('number') ?? '').trim().replace(/^#/, '').slice(0, 40);
+  if (!EMAIL_RE.test(email) || !/^[A-Za-z0-9-]{1,40}$/.test(number)) {
+    error = 'Please enter the email you used at checkout and your order number.';
+  } else if (!(await services.store.rateLimit(`lookup:${clientIp(Astro.request)}`, 5))) {
+    Astro.response.status = 429;
+    error = 'Too many attempts. Please wait a few minutes and try again.';
+  } else {
+    submitted = true;
+    const rec = await services.store.byOrderNumber(number);
+    if (rec && rec.email.toLowerCase() === email.toLowerCase() && rec.orderId) {
+      try {
+        if (services.email) {
+          await sendOrderEmail(services, rec);
+        } else {
+          for (const e of rec.esims ?? []) await services.api.resendEsimEmail(e.iccid, rec.email);
+        }
+      } catch (e) {
+        console.error('[lookup] could not send email', e);
+      }
+    }
+  }
+}
+---
+
+<Base title="Find my order" description={`Find your ${site.brandName} eSIM order and get your QR code again.`} noindex>
+  <div class="container-page max-w-xl py-12">
+    <h1 class="text-3xl font-extrabold">Find my order</h1>
+    {submitted ? (
+      <div class="card mt-6 p-6" role="status">
+        <p class="font-semibold">Check your inbox</p>
+        <p class="mt-2 text-muted">
+          If we found an order matching those details, we've emailed {services.email ? 'a private link to your eSIM' : 'your eSIM and QR code'} to that address.
+          It can take a few minutes; check your spam folder too.
+        </p>
+        <p class="mt-4 text-sm text-muted">Still nothing? Write to <a class="text-brand underline" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.</p>
+      </div>
+    ) : (
+      <Fragment>
+        <p class="mt-2 text-muted">Enter the email you used at checkout and the order number from your confirmation email.</p>
+        <form method="post" class="card mt-6 space-y-4 p-6" novalidate>
+          {error && <p role="alert" class="rounded-lg border border-red-400 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950 dark:text-red-100">{error}</p>}
+          <div>
+            <label for="email" class="text-sm font-medium">Email</label>
+            <input id="email" name="email" type="email" required autocomplete="email" value={email} class="input mt-1" />
+          </div>
+          <div>
+            <label for="number" class="text-sm font-medium">Order number</label>
+            <input id="number" name="number" required inputmode="numeric" value={number} class="input mt-1" placeholder="e.g. 100234" />
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Email me my eSIM</button>
+        </form>
+      </Fragment>
+    )}
+  </div>
+</Base>

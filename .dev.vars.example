@@ -1,0 +1,24 @@
+# Local development secrets. Copy to .dev.vars (git-ignored) and fill in.
+# With no RESELLER_API_KEY, `npm run dev` runs in mock mode: built-in demo catalog,
+# fake orders and checkout without Stripe. The "Deploy to Cloudflare" flow also reads
+# this file to ask you for each secret.
+
+# eSimDistributor console → Developer → API keys (sk_live_...)
+RESELLER_API_KEY=
+
+# Stripe → Developers → API keys. Use sk_test_... locally.
+STRIPE_SECRET_KEY=
+
+# Stripe → Developers → Webhooks → your endpoint → Signing secret (whsec_...).
+# Locally: `stripe listen --forward-to localhost:4321/api/stripe-webhook` prints one.
+STRIPE_WEBHOOK_SECRET=
+
+# Any long random string. Signs the private /order/<id>?t=... links. Do not change after launch.
+ORDER_LINK_SECRET=
+
+# ── Optional (uncomment to use) ──
+# ESD_WEBHOOK_SECRET=whsec_...
+# RESEND_API_KEY=re_...
+# EMAIL_FROM=Acme Travel <esim@acme.example>
+# ADMIN_TOKEN=a-long-random-string
+# MOCK_API=1

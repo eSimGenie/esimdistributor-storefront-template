@@ -1,0 +1,38 @@
+---
+/** iOS / Android install steps. Shown on /install and on the order page. */
+interface Props {
+  /** When set, step text refers to "the QR code above". */
+  withQr?: boolean;
+  headingLevel?: 2 | 3;
+}
+const { withQr = false, headingLevel = 2 } = Astro.props;
+const H = `h${headingLevel}` as 'h2' | 'h3';
+const qr = withQr ? 'the QR code above' : 'the QR code from your order page or email';
+---
+
+<div class="grid gap-6 md:grid-cols-2">
+  <section class="card p-5" aria-labelledby="ios-steps">
+    <H id="ios-steps" class="text-lg font-bold">iPhone (iOS 17 and later)</H>
+    <ol class="mt-3 list-decimal space-y-2 pl-5">
+      <li>Connect to Wi-Fi.</li>
+      <li>Open <strong>Settings → Mobile Service</strong> (or <strong>Cellular</strong>) → <strong>Add eSIM</strong>.</li>
+      <li>Choose <strong>Use QR Code</strong> and scan {qr}. On the same phone? Press and hold the QR image and tap <strong>Add eSIM</strong>, or use <strong>Enter Details Manually</strong> with the SM-DP+ address and activation code.</li>
+      <li>Label the new line (e.g. "Travel") and keep your home SIM as the default for calls and texts.</li>
+      <li>On arrival: set the travel eSIM as <strong>Cellular Data</strong> and turn on <strong>Data Roaming</strong> for it.</li>
+    </ol>
+  </section>
+  <section class="card p-5" aria-labelledby="android-steps">
+    <H id="android-steps" class="text-lg font-bold">Android (Samsung, Pixel and others)</H>
+    <ol class="mt-3 list-decimal space-y-2 pl-5">
+      <li>Connect to Wi-Fi.</li>
+      <li>Samsung: <strong>Settings → Connections → SIM manager → Add eSIM</strong>. Pixel: <strong>Settings → Network &amp; internet → SIMs → Add SIM</strong>.</li>
+      <li>Choose <strong>Scan QR code</strong> and scan {qr}, or choose to enter the activation code manually.</li>
+      <li>Keep your home SIM for calls and texts.</li>
+      <li>On arrival: set the travel eSIM as the <strong>mobile data</strong> SIM and turn on <strong>Roaming</strong> for it.</li>
+    </ol>
+  </section>
+</div>
+<div class="mt-4 rounded-xl bg-brand-soft p-4 text-sm">
+  <strong>Good to know:</strong> install before you travel; your plan's validity starts when the eSIM first connects to a network at your destination.
+  Most QR codes can only be installed once — don't delete the eSIM until your trip is over.
+</div>

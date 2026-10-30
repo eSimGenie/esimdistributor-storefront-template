@@ -1,0 +1,66 @@
+---
+import Base from '../layouts/Base.astro';
+import { DEVICES } from '../lib/devices';
+export const prerender = true;
+---
+
+<Base title="eSIM compatible phones" description="Check if your phone supports eSIM: list of compatible iPhone, Samsung, Google Pixel and other devices, and how to check in 30 seconds.">
+  <div class="container-page py-10">
+    <h1 class="text-3xl font-extrabold sm:text-4xl">Is my phone eSIM compatible?</h1>
+    <p class="mt-3 max-w-2xl text-muted">
+      Your phone needs two things: <strong class="text-fg">eSIM support</strong> and to be <strong class="text-fg">carrier-unlocked</strong>.
+      Most phones released since 2019 support eSIM.
+    </p>
+
+    <section class="mt-8 grid gap-4 md:grid-cols-3" aria-labelledby="check-title">
+      <h2 id="check-title" class="sr-only">How to check</h2>
+      <div class="card p-5">
+        <h3 class="font-bold">Quickest check: dial *#06#</h3>
+        <p class="mt-2 text-sm text-muted">If the screen shows an <strong>EID</strong> number, your phone supports eSIM.</p>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold">iPhone</h3>
+        <p class="mt-2 text-sm text-muted">Settings → General → About. Look for <strong>EID</strong> or a <strong>Digital SIM</strong> entry. For the lock: Settings → General → About → <strong>Carrier Lock</strong> should say "No SIM restrictions".</p>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold">Android</h3>
+        <p class="mt-2 text-sm text-muted">Settings → Connections (or Network &amp; internet) → SIM manager. If you see <strong>Add eSIM</strong> or <strong>Download a SIM</strong>, it's supported.</p>
+      </div>
+    </section>
+
+    <section class="mt-12" aria-labelledby="list-title">
+      <h2 id="list-title" class="text-2xl font-bold">Compatible devices</h2>
+      <label for="device-filter" class="sr-only">Filter devices</label>
+      <input id="device-filter" type="search" placeholder="Search your model, e.g. Pixel 7" class="input mt-4 max-w-md" />
+      <div class="mt-6 grid gap-4 md:grid-cols-2" id="device-list">
+        {DEVICES.map((g) => (
+          <section class="card p-5" data-group>
+            <h3 class="font-bold">{g.brand}</h3>
+            <ul class="mt-2 space-y-1 text-sm">
+              {g.models.map((m) => <li data-model={`${g.brand} ${m}`.toLowerCase()}>{m}</li>)}
+            </ul>
+            {g.note && <p class="mt-3 text-xs text-muted">{g.note}</p>}
+          </section>
+        ))}
+      </div>
+      <p class="mt-6 text-sm text-muted">This list covers common models and is not exhaustive. Phones locked to a carrier, and some regional variants, may not support eSIM. When in doubt, use the *#06# check above.</p>
+    </section>
+  </div>
+  <script is:inline>
+    (function () {
+      var input = document.getElementById('device-filter');
+      input.addEventListener('input', function () {
+        var q = input.value.trim().toLowerCase();
+        document.querySelectorAll('#device-list [data-group]').forEach(function (g) {
+          var any = false;
+          g.querySelectorAll('[data-model]').forEach(function (li) {
+            var m = !q || li.getAttribute('data-model').indexOf(q) !== -1;
+            li.hidden = !m;
+            if (m) any = true;
+          });
+          g.hidden = !any;
+        });
+      });
+    })();
+  </script>
+</Base>

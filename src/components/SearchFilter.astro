@@ -1,0 +1,54 @@
+---
+/**
+ * Progressive-enhancement filter for a list of [data-dest] cards inside `target`.
+ * Without JS the form submits ?q= and the server filters instead.
+ */
+interface Props {
+  target: string;
+  value?: string;
+  autofocus?: boolean;
+}
+const { target, value = '', autofocus = false } = Astro.props;
+---
+
+<form method="get" action="/destinations" role="search" class="relative" data-filter-form>
+  <label for="dest-search" class="sr-only">Search destinations</label>
+  <input
+    id="dest-search"
+    name="q"
+    type="search"
+    value={value}
+    autofocus={autofocus}
+    autocomplete="off"
+    placeholder="Where are you going? e.g. Japan"
+    class="input pr-28 text-base"
+    data-filter-input={target}
+  />
+  <button type="submit" class="btn btn-primary absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 text-sm">Search</button>
+</form>
+<p class="sr-only" aria-live="polite" data-filter-status></p>
+
+<script is:inline>
+  (function () {
+    var input = document.querySelector('[data-filter-input]');
+    if (!input) return;
+    var list = document.querySelector(input.getAttribute('data-filter-input'));
+    if (!list) return;
+    var status = document.querySelector('[data-filter-status]');
+    var empty = list.parentElement && list.parentElement.querySelector('[data-filter-empty]');
+    function run() {
+      var q = input.value.trim().toLowerCase();
+      var shown = 0;
+      list.querySelectorAll('[data-dest]').forEach(function (el) {
+        var item = el.closest('li') || el;
+        var match = q ? (el.getAttribute('data-name') || '').indexOf(q) !== -1 : !item.hasAttribute('data-default-hidden');
+        item.hidden = !match;
+        if (match) shown++;
+      });
+      if (empty) empty.hidden = shown !== 0;
+      if (status) status.textContent = shown + ' destinations';
+    }
+    input.addEventListener('input', run);
+    run();
+  })();
+</script>

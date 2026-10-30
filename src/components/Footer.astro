@@ -1,0 +1,35 @@
+---
+import { site } from '../lib/site';
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-16 border-t border-line bg-surface">
+  <div class="container-page grid gap-8 py-10 sm:grid-cols-3">
+    <div>
+      <p class="font-bold">{site.brandName}</p>
+      <p class="mt-2 text-sm text-muted">{site.tagline}</p>
+    </div>
+    <nav aria-label="Help">
+      <p class="text-sm font-semibold">Help</p>
+      <ul class="mt-2 space-y-1 text-sm">
+        <li><a class="text-muted hover:text-fg" href="/install">How to install</a></li>
+        <li><a class="text-muted hover:text-fg" href="/compatibility">Is my phone compatible?</a></li>
+        <li><a class="text-muted hover:text-fg" href="/lookup">Find my order</a></li>
+        <li><a class="text-muted hover:text-fg" href="/contact">Contact us</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Legal">
+      <p class="text-sm font-semibold">Legal</p>
+      <ul class="mt-2 space-y-1 text-sm">
+        <li><a class="text-muted hover:text-fg" href="/legal/terms">Terms of service</a></li>
+        <li><a class="text-muted hover:text-fg" href="/legal/privacy">Privacy policy</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="container-page border-t border-line py-6 text-xs text-muted">
+    <p>
+      © {year} {site.legal.companyName} · {site.legal.address}{site.legal.registration && ` · ${site.legal.registration}`}
+    </p>
+    <p class="mt-1">Prices are in US dollars. Payments processed securely by Stripe.</p>
+  </div>
+</footer>

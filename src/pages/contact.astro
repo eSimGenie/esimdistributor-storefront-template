@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../lib/site';
+export const prerender = true;
+---
+
+<Base title="Contact us" description={`Get help with your ${site.brandName} eSIM.`}>
+  <div class="container-page max-w-3xl py-10">
+    <h1 class="text-3xl font-extrabold sm:text-4xl">Contact us</h1>
+    <p class="mt-3 text-muted">We're happy to help with installation, connection problems or your order.</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2">
+      <div class="card p-6">
+        <h2 class="font-bold">Email support</h2>
+        <p class="mt-2 text-sm text-muted">Include your order number and phone model so we can help faster.</p>
+        <a class="btn btn-primary mt-4" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+      </div>
+      <div class="card p-6">
+        <h2 class="font-bold">Lost your QR code?</h2>
+        <p class="mt-2 text-sm text-muted">Get it emailed to you again with your email and order number.</p>
+        <a class="btn btn-ghost mt-4" href="/lookup">Find my order</a>
+      </div>
+    </div>
+    <div class="mt-8 text-sm text-muted">
+      <p>{site.legal.companyName}</p>
+      <p>{site.legal.address}</p>
+      {site.legal.registration && <p>{site.legal.registration}</p>}
+    </div>
+  </div>
+</Base>

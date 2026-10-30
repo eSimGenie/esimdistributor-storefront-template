@@ -1,0 +1,63 @@
+{
+  "name": "esim-storefront-template",
+  "version": "1.0.0",
+  "description": "White-label eSIM storefront for eSimDistributor resellers. Deploys to your own Cloudflare account.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.16"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "npm run build && wrangler dev",
+    "check": "astro check",
+    "test": "vitest run",
+    "setup": "tsx scripts/setup.ts",
+    "deploy": "npm run build && wrangler deploy",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.13",
+    "@tailwindcss/vite": "^4.1.0",
+    "astro": "^5.18.0",
+    "tailwindcss": "^4.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/node": "^22.20.5",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "wrangler": "4.59.2"
+  },
+  "cloudflare": {
+    "label": "eSIM Storefront",
+    "products": [
+      "Workers",
+      "KV"
+    ],
+    "categories": [
+      "storage"
+    ],
+    "bindings": {
+      "RESELLER_API_KEY": {
+        "description": "eSimDistributor API key (console → Developer → API keys)."
+      },
+      "STRIPE_SECRET_KEY": {
+        "description": "Stripe secret key (Developers → API keys)."
+      },
+      "STRIPE_WEBHOOK_SECRET": {
+        "description": "Signing secret of the Stripe webhook pointing at /api/stripe-webhook. Put a placeholder until you have created it."
+      },
+      "ORDER_LINK_SECRET": {
+        "description": "Any random string of 32+ characters. Signs private order links; never change it after launch."
+      },
+      "ORDERS": {
+        "description": "KV namespace for order state."
+      }
+    }
+  }
+}

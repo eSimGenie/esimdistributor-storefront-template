@@ -1,0 +1,33 @@
+---
+import type { PublicPlan } from '../lib/catalog';
+import { dataLabel, daysLabel, planPath } from '../lib/format';
+import { formatUsd } from '../lib/pricing';
+
+interface Props {
+  plan: PublicPlan;
+}
+const { plan } = Astro.props;
+---
+
+<li class="card flex flex-col gap-4 p-5">
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <p class="text-2xl font-bold">{dataLabel(plan)}</p>
+      <p class="text-muted">{daysLabel(plan.durationDays)}</p>
+    </div>
+    <p class="text-2xl font-bold text-brand dark:text-fg">{formatUsd(plan.priceCents)}</p>
+  </div>
+  <ul class="flex flex-wrap gap-2 text-xs">
+    {plan.speed && <li class="rounded-full bg-brand-soft px-2.5 py-1 font-medium">{plan.speed}</li>}
+    <li class="rounded-full bg-brand-soft px-2.5 py-1 font-medium">{plan.dataType === 'daily' ? 'Resets daily' : 'Data only'}</li>
+    {plan.topUpSupported && <li class="rounded-full bg-brand-soft px-2.5 py-1 font-medium">Top-up available</li>}
+    {plan.coverage.countries.length > 1 && <li class="rounded-full bg-brand-soft px-2.5 py-1 font-medium">{plan.coverage.countries.length} countries</li>}
+  </ul>
+  <div class="mt-auto flex gap-2">
+    <a href={planPath(plan.sku)} class="btn btn-ghost flex-1 px-3 text-sm">Details</a>
+    <form method="post" action="/api/checkout" class="flex-1">
+      <input type="hidden" name="sku" value={plan.sku} />
+      <button type="submit" class="btn btn-primary w-full px-3 text-sm">Buy now</button>
+    </form>
+  </div>
+</li>

@@ -1,0 +1,55 @@
+# Cloudflare Workers configuration for the eSIM storefront.
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "esim-storefront"
+main = "./dist/_worker.js/index.js"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# Retries paid orders that could not be fulfilled yet (e.g. low balance) — see src/worker.ts.
+[triggers]
+crons = ["*/10 * * * *"]
+
+[observability]
+enabled = true
+
+# Order state (Stripe session → eSimDistributor order). No `id` is needed: the
+# "Deploy to Cloudflare" button and `wrangler deploy` (wrangler 4.45+) create the
+# namespace automatically. With an older wrangler, run
+#   npx wrangler kv namespace create ORDERS
+# and add the printed `id = "..."` line below.
+[[kv_namespaces]]
+binding = "ORDERS"
+
+# Non-secret variables.
+[vars]
+# Stripe publishable key (pk_live_... / pk_test_...). Not needed by the hosted
+# Stripe Checkout used today; kept for embedded checkout. Safe to leave empty.
+STRIPE_PUBLISHABLE_KEY = ""
+# Set to "1" to serve the built-in demo catalog instead of the real API (never in production).
+MOCK_API = "0"
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+# Never put secrets in this file. Set each one with `npx wrangler secret put NAME`
+# (or Cloudflare dashboard → Workers → your worker → Settings → Variables and Secrets).
+# For local development put them in .dev.vars (copy .dev.vars.example).
+#
+# Required
+#   RESELLER_API_KEY       sk_live_... from the eSimDistributor console → Developer → API keys
+#   STRIPE_SECRET_KEY      sk_live_... (or sk_test_...) from Stripe → Developers → API keys
+#   STRIPE_WEBHOOK_SECRET  whsec_... from the Stripe webhook endpoint pointing at /api/stripe-webhook
+#   ORDER_LINK_SECRET      any long random string (signs private order links; e.g. `openssl rand -hex 32`)
+#
+# Optional
+#   ESD_WEBHOOK_SECRET     whsec_... from the eSimDistributor webhook pointing at /api/esd-webhook
+#   RESEND_API_KEY         re_... to send your own branded emails via Resend
+#   EMAIL_FROM             e.g. "Acme Travel <esim@acme.example>" (domain verified in Resend)
+#   ADMIN_TOKEN            enables POST /api/admin/retry (Authorization: Bearer <ADMIN_TOKEN>)
+
+# Custom domain: Cloudflare dashboard → Workers → esim-storefront → Settings → Domains & Routes,
+# or uncomment (the zone must be on your Cloudflare account):
+# routes = [{ pattern = "shop.example.com", custom_domain = true }]

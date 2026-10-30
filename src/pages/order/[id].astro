@@ -1,0 +1,107 @@
+---
+import Base from '../../layouts/Base.astro';
+import InstallSteps from '../../components/InstallSteps.astro';
+import { site } from '../../lib/site';
+import { getServices } from '../../lib/runtime';
+import { refreshProcessing } from '../../lib/fulfil';
+import { formatUsd } from '../../lib/pricing';
+
+const services = getServices(Astro.locals);
+const orderId = Astro.params.id ?? '';
+const token = Astro.url.searchParams.get('t');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+const valid = /^[A-Za-z0-9_-]{1,64}$/.test(orderId) && (await services.verifyOrderToken(orderId, token));
+let rec = valid ? await services.store.byOrderId(orderId) : null;
+if (rec?.state === 'processing') rec = await refreshProcessing(rec, services.fulfilDeps()).catch(() => rec);
+if (!rec) Astro.response.status = 404;
+
+const qrSrc = (iccid: string) => `/api/qr/${encodeURIComponent(iccid)}?o=${encodeURIComponent(orderId)}&t=${encodeURIComponent(token ?? '')}`;
+---
+
+<Base title={rec ? `Order ${rec.orderNumber}` : 'Order not found'} noindex analytics={false}>
+  <div class="container-page max-w-4xl py-10">
+    {!rec ? (
+      <div class="py-10 text-center">
+        <h1 class="text-3xl font-extrabold">This order link is not valid</h1>
+        <p class="mt-4 text-muted">
+          Please open the link from your confirmation email, or <a href="/lookup" class="text-brand underline">look up your order</a> with your email and order number.
+        </p>
+      </div>
+    ) : (
+      <Fragment>
+        <p class="text-sm text-muted">Order {rec.orderNumber} · {formatUsd(rec.amountCents)} · {rec.email}</p>
+        <h1 class="mt-2 text-3xl font-extrabold sm:text-4xl">
+          {rec.state === 'completed' ? 'Your eSIM is ready' : rec.state === 'processing' ? "We're preparing your eSIM" : 'Your eSIM is on its way'}
+        </h1>
+        <p class="mt-2 text-muted">{rec.planName}</p>
+
+        {rec.state !== 'completed' && (
+          <div class="card mt-6 p-5">
+            <p>Your payment went through. We'll email your QR code to <strong>{rec.email}</strong> as soon as the eSIM is ready. You can refresh this page any time.</p>
+          </div>
+        )}
+
+        {rec.state === 'completed' && (rec.esims ?? []).map((e, i) => (
+          <section class="card mt-6 grid gap-6 p-5 sm:p-6 md:grid-cols-[260px_1fr]" aria-labelledby={`esim-${i}`}>
+            <div class="text-center">
+              <img src={qrSrc(e.iccid)} alt={`QR code to install ${e.planName}`} width="240" height="240" class="mx-auto rounded-lg bg-white p-2" />
+              <a href={qrSrc(e.iccid)} download={`esim-${e.iccid}.png`} class="mt-3 inline-block text-sm font-semibold text-brand underline dark:text-fg">Download QR code</a>
+            </div>
+            <div class="min-w-0">
+              <h2 id={`esim-${i}`} class="text-xl font-bold">{e.planName}</h2>
+              <p class="mt-1 text-sm text-muted">ICCID {e.iccid}</p>
+              <p class="mt-4">Scan this QR code with the phone you'll travel with. If you're reading this on that phone, use manual entry:</p>
+              <dl class="mt-4 space-y-3 text-sm">
+                {e.smdpAddress && (
+                  <div>
+                    <dt class="font-semibold">SM-DP+ address</dt>
+                    <dd class="mt-1 flex items-center gap-2"><code class="min-w-0 flex-1 break-all rounded-lg bg-surface px-3 py-2">{e.smdpAddress}</code><button type="button" class="btn btn-ghost px-3 py-2 text-xs" data-copy={e.smdpAddress}>Copy</button></dd>
+                  </div>
+                )}
+                {e.matchingId && (
+                  <div>
+                    <dt class="font-semibold">Activation code</dt>
+                    <dd class="mt-1 flex items-center gap-2"><code class="min-w-0 flex-1 break-all rounded-lg bg-surface px-3 py-2">{e.matchingId}</code><button type="button" class="btn btn-ghost px-3 py-2 text-xs" data-copy={e.matchingId}>Copy</button></dd>
+                  </div>
+                )}
+                {e.lpa && (
+                  <div>
+                    <dt class="font-semibold">Full LPA string</dt>
+                    <dd class="mt-1 flex items-center gap-2"><code class="min-w-0 flex-1 break-all rounded-lg bg-surface px-3 py-2">{e.lpa}</code><button type="button" class="btn btn-ghost px-3 py-2 text-xs" data-copy={e.lpa}>Copy</button></dd>
+                  </div>
+                )}
+              </dl>
+              {e.lpa && (
+                <a href={`https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=${encodeURIComponent(e.lpa)}`} class="btn btn-primary mt-5 text-sm" rel="noopener noreferrer">
+                  Install on this iPhone (iOS 17.4+)
+                </a>
+              )}
+            </div>
+          </section>
+        ))}
+
+        <section class="mt-10" aria-labelledby="install-title">
+          <h2 id="install-title" class="text-2xl font-bold">How to install</h2>
+          <div class="mt-4">
+            <InstallSteps withQr headingLevel={3} />
+          </div>
+        </section>
+
+        <p class="mt-10 text-sm text-muted">
+          Bookmark this page — this private link is your access to the QR code. Need help? <a class="text-brand underline" href={`mailto:${site.supportEmail}?subject=${encodeURIComponent(`Order ${rec.orderNumber}`)}`}>{site.supportEmail}</a>
+        </p>
+      </Fragment>
+    )}
+  </div>
+
+  <script is:inline>
+    document.querySelectorAll('[data-copy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var text = b.getAttribute('data-copy');
+        var done = function () { var t = b.textContent; b.textContent = 'Copied'; setTimeout(function () { b.textContent = t; }, 1500); };
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+      });
+    });
+  </script>
+</Base>

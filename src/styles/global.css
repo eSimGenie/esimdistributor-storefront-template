@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* Dark mode follows the `data-theme` attribute set by the inline script in Base.astro
+   (system preference by default, overridable with the header toggle). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Brand colours come from site.config.json via --brand / --brand-fg / --accent on :root. */
+:root {
+  --bg: #ffffff;
+  --surface: #f5f7fa;
+  --card: #ffffff;
+  --fg: #0f172a;
+  --muted: #526075;
+  --border: #e2e8f0;
+  --ring: color-mix(in srgb, var(--brand) 55%, transparent);
+  --brand-soft: color-mix(in srgb, var(--brand) 10%, var(--bg));
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1020;
+  --surface: #111830;
+  --card: #141c36;
+  --fg: #e8ecf5;
+  --muted: #a3adc2;
+  --border: #26304d;
+  --brand-soft: color-mix(in srgb, var(--brand) 22%, var(--bg));
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+  }
+  a {
+    @apply underline-offset-2;
+  }
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight text-balance;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold transition
+      disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  /* Use together with .btn: class="btn btn-primary" */
+  .btn-primary {
+    @apply bg-brand text-brand-fg hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply border border-line bg-card text-fg hover:bg-surface;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-card;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-card px-4 py-3 text-fg placeholder:text-muted;
+  }
+  .prose-page {
+    @apply max-w-3xl space-y-4 leading-relaxed;
+  }
+  .prose-page h2 {
+    @apply mt-8 text-xl font-bold;
+  }
+  .prose-page ul {
+    @apply list-disc space-y-1 pl-6;
+  }
+  .prose-page ol {
+    @apply list-decimal space-y-1 pl-6;
+  }
+  .prose-page a {
+    @apply text-brand underline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

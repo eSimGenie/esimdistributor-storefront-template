@@ -1,0 +1,77 @@
+---
+import Base from '../../layouts/Base.astro';
+import { site } from '../../lib/site';
+import { getServices } from '../../lib/runtime';
+import { checkoutStatus } from '../../lib/order-flow';
+
+const services = getServices(Astro.locals);
+const sessionId = Astro.url.searchParams.get('session') ?? '';
+const status = await checkoutStatus(services, sessionId);
+if (status.state === 'ready') return Astro.redirect(status.orderUrl, 303);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const delayed = status.state === 'delayed';
+const notFound = status.state === 'not_found';
+---
+
+<Base title="Preparing your eSIM" noindex analytics={false}>
+  <noscript><meta http-equiv="refresh" content="5" /></noscript>
+  <div class="container-page max-w-2xl py-16 text-center">
+    {notFound ? (
+      <Fragment>
+        <h1 class="text-3xl font-extrabold">We couldn't find this checkout</h1>
+        <p class="mt-4 text-muted">
+          If you have paid, your eSIM is on its way by email. You can also <a class="text-brand underline" href="/lookup">find your order</a> or write to
+          <a class="text-brand underline" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.
+        </p>
+      </Fragment>
+    ) : (
+      <div id="pending" data-session={sessionId} data-state={status.state}>
+        <div class="mx-auto size-14 animate-spin rounded-full border-4 border-line border-t-brand" role="presentation" data-spinner hidden={delayed}></div>
+        <h1 class="mt-6 text-3xl font-extrabold" data-title>
+          {delayed ? "We're preparing your eSIM" : status.state === 'awaiting_payment' ? 'Confirming your payment…' : 'Payment received — getting your eSIM…'}
+        </h1>
+        <p class="mt-4 text-muted" aria-live="polite" data-message>
+          {delayed
+            ? "Your payment went through. Your eSIM is taking a little longer than usual — you'll get an email with your QR code as soon as it's ready, usually within the hour. You can keep this page open or close it."
+            : 'This usually takes a few seconds. Please keep this page open.'}
+        </p>
+        <p class="mt-8 text-sm text-muted">
+          Questions? <a class="text-brand underline" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+        </p>
+      </div>
+    )}
+  </div>
+
+  <script is:inline>
+    (function () {
+      var root = document.getElementById('pending');
+      if (!root) return;
+      var session = root.getAttribute('data-session');
+      var title = root.querySelector('[data-title]');
+      var message = root.querySelector('[data-message]');
+      var spinner = root.querySelector('[data-spinner]');
+      var tries = 0;
+      function delayed() {
+        if (spinner) spinner.hidden = true;
+        title.textContent = "We're preparing your eSIM";
+        message.textContent =
+          "Your payment went through. Your eSIM is taking a little longer than usual — you'll get an email with your QR code as soon as it's ready. You can keep this page open or close it.";
+      }
+      function poll() {
+        tries++;
+        fetch('/api/order-status?session=' + encodeURIComponent(session), { headers: { Accept: 'application/json' } })
+          .then(function (r) { return r.json(); })
+          .then(function (s) {
+            if (s.state === 'ready' && s.orderUrl) { window.location.replace(s.orderUrl); return; }
+            if (s.state === 'delayed' || tries > 40) delayed();
+            schedule(s.state === 'delayed' ? 30000 : null);
+          })
+          .catch(function () { schedule(null); });
+      }
+      function schedule(ms) {
+        setTimeout(poll, ms || (tries < 10 ? 2000 : tries < 40 ? 5000 : 30000));
+      }
+      schedule(1500);
+    })();
+  </script>
+</Base>

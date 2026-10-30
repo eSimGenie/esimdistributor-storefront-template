@@ -1,0 +1,69 @@
+---
+import Base from '../../layouts/Base.astro';
+import { site } from '../../lib/site';
+export const prerender = true;
+// TEMPLATE TEXT — have it reviewed for your business and jurisdiction before launch.
+const updated = '2026-01-01';
+const L = site.legal;
+---
+
+<Base title="Terms of service" description={`Terms of service for ${site.brandName} travel eSIMs.`}>
+  <article class="container-page prose-page py-10">
+    <h1 class="text-3xl font-extrabold">Terms of service</h1>
+    <p class="text-sm text-muted">Last updated {updated}</p>
+
+    <p>
+      These terms apply to eSIM data plans sold on {site.websiteUrl.replace(/^https?:\/\//, '')} by {L.companyName}, {L.address}{L.registration ? ` (${L.registration})` : ''}
+      ("we", "us"). By buying a plan you agree to them.
+    </p>
+
+    <h2>1. The service</h2>
+    <p>
+      We sell prepaid, data-only eSIM plans for use abroad. Each plan has a data allowance (or a daily allowance) and a validity period, shown before you buy.
+      The validity period starts when the eSIM first connects to a supported network in a covered country, unless the plan page says otherwise.
+      Plans do not include a phone number, calls or SMS.
+    </p>
+
+    <h2>2. Your device</h2>
+    <p>
+      You are responsible for checking that your device supports eSIM and is not locked to a carrier before you buy (see <a href="/compatibility">compatibility</a>).
+      Coverage, speed and availability depend on local partner networks and may vary.
+    </p>
+
+    <h2>3. Prices and payment</h2>
+    <p>
+      Prices are shown in US dollars and are charged at checkout through Stripe. Your bank may apply currency conversion fees. We may change prices at any time;
+      the price you pay is the one shown at checkout.
+    </p>
+
+    <h2>4. Delivery</h2>
+    <p>
+      Your eSIM (QR code and installation details) is shown on screen after payment and sent to the email address you provide, normally within minutes.
+      Keep the QR code private: anyone with it can install your plan.
+    </p>
+
+    <h2>5. Refunds</h2>
+    <ul>
+      <li>If your eSIM has not been installed, you may request a refund within 30 days of purchase.</li>
+      <li>If the eSIM cannot be installed or does not connect because of a fault on our side, we will replace it or refund you.</li>
+      <li>Once an eSIM has been installed or has used data, it cannot be refunded, except where required by law.</li>
+      <li>Unused data or days are not refundable after the plan has started.</li>
+    </ul>
+    <p>To request a refund write to <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a> with your order number.</p>
+
+    <h2>6. Fair use</h2>
+    <p>Plans are for personal use while travelling. Use for illegal purposes, network abuse or resale is not allowed, and we may suspend plans that are misused.</p>
+
+    <h2>7. Liability</h2>
+    <p>
+      To the extent permitted by law, our liability for any claim relating to a plan is limited to the price you paid for it. Nothing in these terms limits rights
+      you have under consumer protection law.
+    </p>
+
+    <h2>8. Governing law</h2>
+    <p>These terms are governed by the laws of {L.jurisdiction}. Mandatory consumer protections of your country of residence still apply.</p>
+
+    <h2>9. Contact</h2>
+    <p>{L.companyName}, {L.address}. Email: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.</p>
+  </article>
+</Base>
